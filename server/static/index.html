@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Go PC Management Dashboard</title>
+    <style>
+        body { font-family: sans-serif; }
+        #agents { list-style-type: none; padding: 0; }
+        #agents li { padding: 8px; margin-bottom: 5px; background-color: #f4f4f4; border-radius: 5px; }
+        input, button { padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Connected Agents</h1>
+    <ul id="agents"></ul>
+
+    <h2>Send Command</h2>
+    <input type="text" id="command" placeholder="Enter command">
+    <button onclick="sendCommand()">Send</button>
+
+    <script src="app.js"></script>
+</body>
+</html>
