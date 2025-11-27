@@ -23,11 +23,13 @@ var (
 )
 
 func runAsUser(command string) error {
+	log.Println("runAsUser: Starting")
 	// 1. Get active console session ID
 	sessionID, _, _ := procWTSGetActiveConsoleSessionId.Call()
 	if sessionID == 0xFFFFFFFF {
 		return fmt.Errorf("no active console session found")
 	}
+	log.Printf("runAsUser: Session ID %d", sessionID)
 
 	// 2. Get user token
 	var token windows.Token
@@ -36,12 +38,13 @@ func runAsUser(command string) error {
 		return fmt.Errorf("WTSQueryUserToken failed: %v", err)
 	}
 	defer token.Close()
+	log.Println("runAsUser: Got user token")
 
 	// 3. Duplicate token
 	var duplicatedToken windows.Token
 	ret, _, err = procDuplicateTokenEx.Call(
 		uintptr(token),
-		0, // MAXIMUM_ALLOWED
+		0x02000000, // MAXIMUM_ALLOWED
 		0,
 		uintptr(windows.SecurityIdentification),
 		uintptr(windows.TokenPrimary),
@@ -51,6 +54,7 @@ func runAsUser(command string) error {
 		return fmt.Errorf("DuplicateTokenEx failed: %v", err)
 	}
 	defer duplicatedToken.Close()
+	log.Println("runAsUser: Duplicated token")
 
 	// 4. Create environment block
 	var envBlock uintptr
@@ -63,6 +67,7 @@ func runAsUser(command string) error {
 		return fmt.Errorf("CreateEnvironmentBlock failed: %v", err)
 	}
 	defer procDestroyEnvironmentBlock.Call(envBlock)
+	log.Println("runAsUser: Created environment block")
 
 	// 5. Create process as user
 	si := windows.StartupInfo{}
@@ -76,6 +81,7 @@ func runAsUser(command string) error {
 		return err
 	}
 
+	log.Printf("runAsUser: Calling CreateProcessAsUserW for %s", command)
 	// CreateProcessAsUserW arguments:
 	// hToken, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes,
 	// bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation

@@ -131,10 +131,6 @@ func (p *program) run() {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
-			// 연결이 끊어지면 재연결 시도 (서비스에서는 종료되지 않고 재시도해야 함)
-			// 여기서는 간단히 함수 종료 후 서비스 재시작에 의존하거나
-			// 내부 루프에서 재연결 로직을 구현해야 함.
-			// 서비스 관리자가 재시작해주므로 일단 return
 			return
 		}
 		log.Printf("recv: %s", message)
@@ -194,6 +190,12 @@ func sendStatus(conn *websocket.Conn) {
 }
 
 func executeCommand(conn *websocket.Conn, command string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in executeCommand: %v", r)
+		}
+	}()
+
 	// GUI 명령 확인 (gui: 접두사)
 	if len(command) > 4 && command[:4] == "gui:" {
 		guiCmd := command[4:]
