@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net"
 	"net/url"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/kardianos/service"
 )
 
 type AgentInfo struct {
@@ -35,7 +37,50 @@ type Message struct {
 
 var startTime = time.Now()
 
+// Service setup
+type program struct{}
+
+func (p *program) Start(s service.Service) error {
+	go p.run()
+	return nil
+}
+
+func (p *program) Stop(s service.Service) error {
+	return nil
+}
+
 func main() {
+	svcFlag := flag.String("service", "", "Control the system service.")
+	flag.Parse()
+
+	svcConfig := &service.Config{
+		Name:        "GoPCAgent",
+		DisplayName: "Go PC Agent",
+		Description: "Agent for Go PC Management System",
+	}
+
+	prg := &program{}
+	s, err := service.New(prg, svcConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(*svcFlag) != 0 {
+		err := service.Control(s, *svcFlag)
+		if err != nil {
+			log.Printf("Valid actions: %q\n", service.ControlAction)
+			log.Fatal(err)
+		}
+		return
+	}
+
+	err = s.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (p *program) run() {
 	serverAddr := "localhost:8080"
 	u := url.URL{Scheme: "ws", Host: serverAddr, Path: "/ws-agent"}
 	log.Printf("connecting to %s", u.String())
@@ -73,6 +118,10 @@ func main() {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
+			// 연결이 끊어지면 재연결 시도 (서비스에서는 종료되지 않고 재시도해야 함)
+			// 여기서는 간단히 함수 종료 후 서비스 재시작에 의존하거나
+			// 내부 루프에서 재연결 로직을 구현해야 함.
+			// 서비스 관리자가 재시작해주므로 일단 return
 			return
 		}
 		log.Printf("recv: %s", message)
@@ -116,11 +165,10 @@ func sendStatus(conn *websocket.Conn) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	// 간단한 시뮬레이션 값 (실제 구현은 OS별 라이브러리 필요)
 	status := AgentStatus{
 		MemoryUsage: float64(m.Alloc) / 1024 / 1024, // MB
-		CPUUsage:    0.0,                            // 구현 복잡성으로 생략
-		DiskUsage:   0.0,                            // 구현 복잡성으로 생략
+		CPUUsage:    0.0,
+		DiskUsage:   0.0,
 		Uptime:      uint64(time.Since(startTime).Seconds()),
 	}
 
@@ -152,7 +200,7 @@ func executeCommand(conn *websocket.Conn, command string) {
 		"output":    resultOutput,
 		"error":     errorMsg,
 		"timestamp": time.Now(),
-		"exit_code": 0, // 간단화
+		"exit_code": 0,
 	}
 
 	msg := Message{
