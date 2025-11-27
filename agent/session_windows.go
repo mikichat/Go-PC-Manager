@@ -14,7 +14,7 @@ var (
 	modadvapi32 = windows.NewLazySystemDLL("advapi32.dll")
 	moduserenv  = windows.NewLazySystemDLL("userenv.dll")
 
-	procWTSGetActiveConsoleSessionId = modwtsapi32.NewProc("WTSGetActiveConsoleSessionId")
+	procWTSGetActiveConsoleSessionId = modkernel32.NewProc("WTSGetActiveConsoleSessionId")
 	procWTSQueryUserToken            = modwtsapi32.NewProc("WTSQueryUserToken")
 	procDuplicateTokenEx             = modadvapi32.NewProc("DuplicateTokenEx")
 	procCreateEnvironmentBlock       = moduserenv.NewProc("CreateEnvironmentBlock")
@@ -26,7 +26,7 @@ func runAsUser(command string) error {
 	log.Println("runAsUser: Starting")
 	// 1. Get active console session ID
 	sessionID, _, _ := procWTSGetActiveConsoleSessionId.Call()
-	if sessionID == 0xFFFFFFFF {
+	if uint32(sessionID) == 0xFFFFFFFF {
 		return fmt.Errorf("no active console session found")
 	}
 	log.Printf("runAsUser: Session ID %d", sessionID)
