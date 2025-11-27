@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -50,6 +51,18 @@ func (p *program) Stop(s service.Service) error {
 }
 
 func main() {
+	// 로그 파일 설정
+	exePath, err := os.Executable()
+	if err == nil {
+		logDir := filepath.Dir(exePath)
+		logFile := filepath.Join(logDir, "agent.log")
+		f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err == nil {
+			defer f.Close()
+			log.SetOutput(f)
+		}
+	}
+
 	svcFlag := flag.String("service", "", "Control the system service.")
 	flag.Parse()
 
