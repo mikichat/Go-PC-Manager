@@ -106,7 +106,7 @@ function createAgentCard(agent) {
                 </div>
                 <div class="metric">
                     <div class="metric-label">메모리 사용률</div>
-                    <div class="metric-value">${agent.status.memory_usage.toFixed(1)}%</div>
+                    <div class="metric-value">${agent.status.memory_usage.toFixed(1)} MB</div>
                 </div>
                 <div class="metric">
                     <div class="metric-label">디스크 사용률</div>
