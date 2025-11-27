@@ -46,6 +46,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 3.1 Copy Uninstaller
+	uninstallExeName := "uninstall.exe"
+	uninstallTargetPath := filepath.Join(targetDir, uninstallExeName)
+	uninstallSourcePath := filepath.Join(currentDir, uninstallExeName)
+
+	fmt.Printf("Copying %s to %s\n", uninstallSourcePath, uninstallTargetPath)
+	err = copyFile(uninstallSourcePath, uninstallTargetPath)
+	if err != nil {
+		fmt.Printf("Error copying uninstaller: %v\n", err)
+		fmt.Println("Make sure uninstall.exe is in the same directory as the installer.")
+		// Continue even if uninstaller copy fails? Better to fail.
+		pause()
+		os.Exit(1)
+	}
+
 	// 4. Install Service
 	fmt.Println("Installing Windows Service...")
 	cmd := exec.Command(targetPath, "-service", "install")
