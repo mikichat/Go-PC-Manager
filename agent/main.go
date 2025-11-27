@@ -194,6 +194,37 @@ func sendStatus(conn *websocket.Conn) {
 }
 
 func executeCommand(conn *websocket.Conn, command string) {
+	// GUI 명령 확인 (gui: 접두사)
+	if len(command) > 4 && command[:4] == "gui:" {
+		guiCmd := command[4:]
+		log.Printf("Executing GUI command: %s", guiCmd)
+		err := runAsUser(guiCmd)
+
+		resultMsg := ""
+		errorMsg := ""
+		if err != nil {
+			errorMsg = err.Error()
+			log.Printf("GUI execution error: %v", err)
+		} else {
+			resultMsg = "GUI command launched successfully"
+		}
+
+		result := map[string]interface{}{
+			"command":   command,
+			"output":    resultMsg,
+			"error":     errorMsg,
+			"timestamp": time.Now(),
+			"exit_code": 0,
+		}
+
+		msg := Message{
+			Type:   "command_result",
+			Result: result,
+		}
+		conn.WriteJSON(msg)
+		return
+	}
+
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("cmd", "/C", command)
