@@ -26,7 +26,7 @@ var (
 
 func main() {
 	// 정적 파일 제공
-	fs := http.FileServer(http.Dir("server/static"))
+	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
 
 	// 웹소켓 핸들러
