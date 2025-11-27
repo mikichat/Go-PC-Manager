@@ -1,22 +1,252 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Go PC Management Dashboard</title>
     <style>
-        body { font-family: sans-serif; }
-        #agents { list-style-type: none; padding: 0; }
-        #agents li { padding: 8px; margin-bottom: 5px; background-color: #f4f4f4; border-radius: 5px; }
-        input, button { padding: 10px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .agents-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .agent-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fafafa;
+            transition: all 0.3s;
+        }
+        .agent-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .agent-card.selected {
+            border-color: #007bff;
+            background: #e7f3ff;
+        }
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .agent-id {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .agent-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .status-connected {
+            background: #28a745;
+            color: white;
+        }
+        .status-disconnected {
+            background: #dc3545;
+            color: white;
+        }
+        .agent-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .agent-info-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        .agent-info-label {
+            font-weight: 500;
+        }
+        .status-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .metric {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+        .metric-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .command-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .command-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .command-form input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        .command-form button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+        }
+        .command-form button:hover {
+            background: #0056b3;
+        }
+        .command-form button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .target-selector {
+            margin-bottom: 10px;
+        }
+        .target-selector label {
+            margin-right: 15px;
+            font-weight: 500;
+        }
+        .target-selector input[type="radio"] {
+            margin-right: 5px;
+        }
+        .results-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result-item {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .result-agent {
+            color: #007bff;
+        }
+        .result-command {
+            color: #666;
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .result-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .result-error {
+            color: #dc3545;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+        }
+        .result-timestamp {
+            color: #999;
+            font-size: 0.85em;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
     </style>
 </head>
 <body>
-    <h1>Connected Agents</h1>
-    <ul id="agents"></ul>
+    <div class="container">
+        <h1>🖥️ PC 관리 대시보드</h1>
+        
+        <div class="agents-section">
+            <h2>연결된 에이전트</h2>
+            <div id="agents"></div>
+            <div id="agents-empty" class="empty-state" style="display: none;">
+                연결된 에이전트가 없습니다.
+            </div>
+        </div>
 
-    <h2>Send Command</h2>
-    <input type="text" id="command" placeholder="Enter command">
-    <button onclick="sendCommand()">Send</button>
+        <div class="command-section">
+            <h2>명령 전송</h2>
+            <div class="target-selector">
+                <label>
+                    <input type="radio" name="target" value="all" checked>
+                    모든 에이전트
+                </label>
+                <label>
+                    <input type="radio" name="target" value="selected">
+                    선택된 에이전트
+                </label>
+            </div>
+            <div class="command-form">
+                <input type="text" id="command" placeholder="명령어를 입력하세요 (예: dir, echo Hello)">
+                <button onclick="sendCommand()">전송</button>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <h2>명령 실행 결과</h2>
+            <div id="results"></div>
+            <div id="results-empty" class="empty-state" style="display: none;">
+                아직 실행된 명령이 없습니다.
+            </div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
