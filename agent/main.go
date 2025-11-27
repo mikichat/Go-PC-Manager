@@ -117,12 +117,20 @@ func (p *program) run() {
 	// 등록 메시지 전송
 	sendRegister(conn)
 
-	// 상태 업데이트 고루틴
+	// 상태 업데이트 및 버전 확인 고루틴
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
+		updateTicker := time.NewTicker(1 * time.Minute) // 1분마다 업데이트 확인
 		defer ticker.Stop()
-		for range ticker.C {
-			sendStatus(conn)
+		defer updateTicker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				sendStatus(conn)
+			case <-updateTicker.C:
+				checkForUpdates(serverAddr)
+			}
 		}
 	}()
 

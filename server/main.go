@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const CurrentAgentVersion = "1.0.1"
+
 // 데이터 구조 정의
 type AgentInfo struct {
 	Hostname string `json:"hostname"`
@@ -65,9 +67,15 @@ var (
 )
 
 func main() {
-	// 정적 파일 제공
+	// 정적 파일 서빙
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
+
+	// 업데이트 파일 서빙
+	http.Handle("/updates/", http.StripPrefix("/updates/", http.FileServer(http.Dir("updates"))))
+
+	// 버전 확인 엔드포인트
+	http.HandleFunc("/version", handleVersion)
 
 	// 웹소켓 핸들러
 	http.HandleFunc("/ws-agent", handleAgentConnections)
@@ -79,6 +87,13 @@ func main() {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func handleVersion(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"version": CurrentAgentVersion,
+	})
 }
 
 func handleAgentConnections(w http.ResponseWriter, r *http.Request) {

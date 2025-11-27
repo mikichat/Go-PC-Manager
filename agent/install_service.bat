@@ -1,6 +1,6 @@
 @echo off
 echo Building Agent...
-go build -o agent.exe main.go session_windows.go
+go build -o agent.exe main.go session_windows.go update.go
 if %ERRORLEVEL% NEQ 0 (
     echo Build failed.
     pause
