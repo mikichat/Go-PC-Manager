@@ -94,7 +94,7 @@ func main() {
 }
 
 func (p *program) run() {
-	serverAddr := "localhost:8080"
+	serverAddr := "109.2.40.120:7070"
 	u := url.URL{Scheme: "ws", Host: serverAddr, Path: "/ws-agent"}
 	log.Printf("connecting to %s", u.String())
 
