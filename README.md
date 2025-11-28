@@ -104,14 +104,24 @@ go build -o gopc-server.exe
 
 서버는 기본적으로 `http://localhost:8080`에서 실행됩니다.
 
-### 에이전트 실행
+### 에이전트 실행 (Agent Execution)
+
+GUI 프로그램(메모장 등) 실행을 위해 에이전트는 **사용자 모드**에서 실행되어야 합니다. 이를 위해 간편한 배치 스크립트를 제공합니다.
+
+#### 1. 수동 실행
+제공된 배치 파일을 사용하여 에이전트를 빌드하고 실행합니다.
 ```bash
 cd agent
-go run main.go
-# 또는 빌드 후 실행
-go build -o gopc-agent.exe
-./gopc-agent.exe
+run_agent.bat
 ```
+
+#### 2. 윈도우 시작 프로그램 등록 (자동 실행)
+PC 로그인 시 에이전트가 자동으로 실행되도록 시작 프로그램에 등록합니다.
+```bash
+cd agent
+install_startup.bat
+```
+* 등록을 해제하려면 `uninstall_startup.bat`를 실행하세요.
 
 에이전트는 자동으로 서버에 연결을 시도하며, 연결이 끊어지면 자동으로 재연결합니다.
 

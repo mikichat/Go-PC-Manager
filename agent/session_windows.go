@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os/exec"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -24,12 +25,32 @@ var (
 
 func runAsUser(command string) error {
 	log.Println("runAsUser: Starting")
+
+	// 0. Check if we are already in a user session
+	// If the current session ID is not 0, we are likely in a user session.
+	// However, a more robust check is to try WTSGetActiveConsoleSessionId.
+	// If we are running as a normal user, we can just execute the command.
+
+	// Get the current process session ID
+	var currentSessionId uint32
+	err := windows.ProcessIdToSessionId(windows.GetCurrentProcessId(), &currentSessionId)
+	if err != nil {
+		log.Printf("Failed to get current session ID: %v", err)
+	} else {
+		log.Printf("Current Session ID: %d", currentSessionId)
+		if currentSessionId != 0 {
+			log.Println("Running in user session, executing directly")
+			cmd := exec.Command("cmd", "/C", command)
+			return cmd.Start()
+		}
+	}
+
 	// 1. Get active console session ID
 	sessionID, _, _ := procWTSGetActiveConsoleSessionId.Call()
 	if uint32(sessionID) == 0xFFFFFFFF {
 		return fmt.Errorf("no active console session found")
 	}
-	log.Printf("runAsUser: Session ID %d", sessionID)
+	log.Printf("runAsUser: Target Session ID %d", sessionID)
 
 	// 2. Get user token
 	var token windows.Token
