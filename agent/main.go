@@ -13,6 +13,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/kardianos/service"
+
+	"gopc-agent/config"
 )
 
 type AgentInfo struct {
@@ -51,11 +53,14 @@ func (p *program) Stop(s service.Service) error {
 }
 
 func main() {
+	// 설정 로드
+	cfg := config.Load()
+
 	// 로그 파일 설정
 	exePath, err := os.Executable()
 	if err == nil {
 		logDir := filepath.Dir(exePath)
-		logFile := filepath.Join(logDir, "agent.log")
+		logFile := filepath.Join(logDir, cfg.LogFile)
 		f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err == nil {
 			defer f.Close()
@@ -94,8 +99,10 @@ func main() {
 }
 
 func (p *program) run() {
-	serverAddr := "109.2.40.120:7070"
-	u := url.URL{Scheme: "ws", Host: serverAddr, Path: "/ws-agent"}
+	// 설정 로드
+	cfg := config.Load()
+
+	u := url.URL{Scheme: "ws", Host: cfg.ServerAddress, Path: "/ws-agent"}
 	log.Printf("connecting to %s", u.String())
 
 	var conn *websocket.Conn
@@ -119,8 +126,8 @@ func (p *program) run() {
 
 	// 상태 업데이트 및 버전 확인 고루틴
 	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		updateTicker := time.NewTicker(1 * time.Minute) // 1분마다 업데이트 확인
+		ticker := time.NewTicker(cfg.GetStatusDuration())
+		updateTicker := time.NewTicker(cfg.GetUpdateCheckDuration())
 		defer ticker.Stop()
 		defer updateTicker.Stop()
 
@@ -129,7 +136,7 @@ func (p *program) run() {
 			case <-ticker.C:
 				sendStatus(conn)
 			case <-updateTicker.C:
-				checkForUpdates(serverAddr)
+				checkForUpdates(cfg.ServerAddress)
 			}
 		}
 	}()

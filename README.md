@@ -155,17 +155,79 @@ install_startup.bat
 
 ## 🔧 설정 (Configuration)
 
-### 서버 주소 변경
-에이전트의 서버 주소를 변경하려면 `agent/main.go`의 `serverAddr` 변수를 수정하세요:
-```go
-serverAddr := "your-server-ip:8080"
+### 설정 파일 사용 (권장)
+
+에이전트와 서버는 YAML 형식의 설정 파일을 지원합니다. 설정 파일을 사용하면 재컴파일 없이 쉽게 설정을 변경할 수 있습니다.
+
+#### 에이전트 설정
+
+1. 예시 파일을 복사하여 설정 파일 생성:
+```bash
+cd agent
+copy config.example.yaml config.yaml
 ```
 
-### 상태 수집 주기
-상태 정보 수집 주기를 변경하려면 `agent/main.go`의 틱커 주기를 수정하세요:
-```go
-statusTicker := time.NewTicker(30 * time.Second) // 30초마다
+2. `config.yaml` 파일 수정:
+```yaml
+# 서버 주소 (호스트:포트)
+server_address: "your-server-ip:8080"
+
+# 상태 정보 수집 주기 (초)
+status_interval: 5
+
+# 업데이트 확인 주기 (초)
+update_check_interval: 60
+
+# 로그 파일 경로
+log_file: "agent.log"
 ```
+
+#### 서버 설정
+
+1. 예시 파일을 복사하여 설정 파일 생성:
+```bash
+cd server
+copy config.example.yaml config.yaml
+```
+
+2. `config.yaml` 파일 수정:
+```yaml
+# 서버 포트
+port: "8080"
+
+# 정적 파일 디렉토리
+static_dir: "static"
+
+# 업데이트 파일 디렉토리
+updates_dir: "updates"
+
+# 현재 에이전트 버전
+agent_version: "1.0.1"
+```
+
+### 기본값
+
+설정 파일이 없을 경우 다음 기본값으로 동작합니다:
+
+**에이전트:**
+- 서버 주소: `localhost:8080`
+- 상태 수집 주기: `5초`
+- 업데이트 확인 주기: `60초`
+
+**서버:**
+- 포트: `8080`
+- 정적 파일 디렉토리: `static`
+- 업데이트 파일 디렉토리: `updates`
+
+### 코드에서 직접 변경 (비권장)
+
+설정 파일을 사용하지 않고 코드에서 직접 변경하려면:
+
+**에이전트 서버 주소 변경:**
+`agent/config/config.go`의 `DefaultConfig()` 함수 수정
+
+**서버 포트 변경:**
+`server/config/config.go`의 `DefaultConfig()` 함수 수정
 
 ---
 
@@ -209,7 +271,7 @@ statusTicker := time.NewTicker(30 * time.Second) // 30초마다
 
 ### 운영 편의성
 - [ ] Windows 서비스로 등록 기능
-- [ ] 설정 파일 지원 (YAML/JSON)
+- [x] 설정 파일 지원 (YAML/JSON)
 - [ ] 로그 파일 로테이션
 - [ ] 원격 업데이트 기능
 - [ ] 에이전트 그룹 관리

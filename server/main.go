@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-)
 
-const CurrentAgentVersion = "1.0.1"
+	"gopc-server/config"
+)
 
 // 데이터 구조 정의
 type AgentInfo struct {
@@ -67,32 +67,37 @@ var (
 )
 
 func main() {
+	// 설정 로드
+	cfg := config.Load()
+
 	// 정적 파일 서빙
-	fs := http.FileServer(http.Dir("static"))
+	fs := http.FileServer(http.Dir(cfg.StaticDir))
 	http.Handle("/", fs)
 
 	// 업데이트 파일 서빙
-	http.Handle("/updates/", http.StripPrefix("/updates/", http.FileServer(http.Dir("updates"))))
+	http.Handle("/updates/", http.StripPrefix("/updates/", http.FileServer(http.Dir(cfg.UpdatesDir))))
 
 	// 버전 확인 엔드포인트
-	http.HandleFunc("/version", handleVersion)
+	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+		handleVersion(w, r, cfg.AgentVersion)
+	})
 
 	// 웹소켓 핸들러
 	http.HandleFunc("/ws-agent", handleAgentConnections)
 	http.HandleFunc("/ws-dashboard", handleDashboardConnections)
 
 	// 서버 시작
-	log.Println("http server started on :8080")
-	err := http.ListenAndServe(":8080", nil)
+	log.Printf("http server started on %s", cfg.GetListenAddr())
+	err := http.ListenAndServe(cfg.GetListenAddr(), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
-func handleVersion(w http.ResponseWriter, r *http.Request) {
+func handleVersion(w http.ResponseWriter, r *http.Request, version string) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"version": CurrentAgentVersion,
+		"version": version,
 	})
 }
 
