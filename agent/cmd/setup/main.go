@@ -163,9 +163,17 @@ func uninstallService() {
 }
 
 func runCommand(name string, args ...string) error {
+	fmt.Printf("DEBUG: Executing: %s %v\n", name, args)
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	// 실행 파일이 있는 디렉토리를 작업 디렉토리로 설정
+	dir := filepath.Dir(name)
+	if filepath.IsAbs(dir) {
+		cmd.Dir = dir
+	}
+
 	return cmd.Run()
 }
 
