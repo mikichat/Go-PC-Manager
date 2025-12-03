@@ -18,7 +18,17 @@ echo.
 echo [2/4] Copying Agent to Setup folder...
 copy /Y agent.exe cmd\setup\agent.exe
 if %ERRORLEVEL% NEQ 0 (
-    echo Failed to copy agent.exe!
+    echo Failed to copy agent.exe to setup!
+    pause
+    exit /b %ERRORLEVEL%
+)
+
+echo.
+echo [2-1/4] Copying Agent to Server Updates folder...
+if not exist ..\server\updates mkdir ..\server\updates
+copy /Y agent.exe ..\server\updates\agent.exe
+if %ERRORLEVEL% NEQ 0 (
+    echo Failed to copy agent.exe to updates!
     pause
     exit /b %ERRORLEVEL%
 )
