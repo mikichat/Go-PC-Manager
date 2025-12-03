@@ -2,13 +2,25 @@ package main
 
 import (
 	"bufio"
+	_ "embed"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"golang.org/x/sys/windows"
+)
+
+//go:embed agent.exe
+var agentExe []byte
+
+const (
+	InstallDir = "C:\\GoPCAgent"
+	AgentFile  = "agent.exe"
+	ConfigFile = "config.yaml"
 )
 
 func main() {
@@ -56,17 +68,40 @@ func main() {
 func installService() {
 	fmt.Println("\n[설치 진행 중...]")
 
-	// agent.exe 존재 확인
-	if _, err := os.Stat("agent.exe"); os.IsNotExist(err) {
-		fmt.Println("오류: agent.exe 파일을 찾을 수 없습니다.")
-		fmt.Println("setup.exe는 agent.exe와 같은 폴더에 있어야 합니다.")
+	// 설치 디렉토리 생성
+	fmt.Printf("- 설치 폴더 생성 중 (%s)...\n", InstallDir)
+	if err := os.MkdirAll(InstallDir, 0755); err != nil {
+		fmt.Printf("실패: 폴더 생성 오류 - %v\n", err)
 		pause()
 		return
 	}
 
+	// agent.exe 파일 추출
+	targetPath := filepath.Join(InstallDir, AgentFile)
+	fmt.Println("- 파일 추출 중...")
+	if err := os.WriteFile(targetPath, agentExe, 0755); err != nil {
+		fmt.Printf("실패: 파일 쓰기 오류 - %v\n", err)
+		pause()
+		return
+	}
+
+	// config.yaml 생성 (기본값)
+	configPath := filepath.Join(InstallDir, ConfigFile)
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		fmt.Println("- 기본 설정 파일 생성 중...")
+		defaultConfig := `server_address: "localhost:8080"
+status_interval: 5
+update_check_interval: 60
+log_file: "agent.log"
+`
+		if err := os.WriteFile(configPath, []byte(defaultConfig), 0644); err != nil {
+			fmt.Printf("경고: 설정 파일 생성 실패 - %v\n", err)
+		}
+	}
+
 	// 서비스 설치
 	fmt.Println("- 서비스 등록 중...")
-	if err := runCommand("agent.exe", "-service", "install"); err != nil {
+	if err := runCommand(targetPath, "-service", "install"); err != nil {
 		fmt.Printf("실패: %v\n", err)
 		pause()
 		return
@@ -74,29 +109,53 @@ func installService() {
 
 	// 서비스 시작
 	fmt.Println("- 서비스 시작 중...")
-	if err := runCommand("agent.exe", "-service", "start"); err != nil {
+	if err := runCommand(targetPath, "-service", "start"); err != nil {
 		fmt.Printf("실패: %v\n", err)
 		pause()
 		return
 	}
 
 	fmt.Println("\n✅ 에이전트가 성공적으로 설치되고 시작되었습니다!")
+	fmt.Printf("설치 위치: %s\n", InstallDir)
 	pause()
 }
 
 func uninstallService() {
 	fmt.Println("\n[제거 진행 중...]")
 
-	// 서비스 중지
-	fmt.Println("- 서비스 중지 중...")
-	runCommand("agent.exe", "-service", "stop") // 실패해도 계속 진행
+	targetPath := filepath.Join(InstallDir, AgentFile)
 
-	// 서비스 제거
-	fmt.Println("- 서비스 제거 중...")
-	if err := runCommand("agent.exe", "-service", "uninstall"); err != nil {
-		fmt.Printf("실패: %v\n", err)
-		pause()
-		return
+	// 파일 존재 확인
+	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+		fmt.Println("오류: 설치된 에이전트 파일을 찾을 수 없습니다.")
+		fmt.Printf("경로: %s\n", targetPath)
+
+		// 파일이 없어도 서비스가 남아있을 수 있으므로 sc 명령어로 시도
+		fmt.Println("- sc 명령어로 서비스 제거 시도...")
+		exec.Command("sc", "stop", "GoPCAgent").Run()
+		exec.Command("sc", "delete", "GoPCAgent").Run()
+	} else {
+		// 서비스 중지
+		fmt.Println("- 서비스 중지 중...")
+		runCommand(targetPath, "-service", "stop")
+
+		// 서비스 제거
+		fmt.Println("- 서비스 제거 중...")
+		if err := runCommand(targetPath, "-service", "uninstall"); err != nil {
+			fmt.Printf("실패: 서비스 제거 오류 - %v\n", err)
+			// 계속 진행 (파일 삭제 시도)
+		}
+	}
+
+	// 잠시 대기 (프로세스 해제)
+	time.Sleep(1 * time.Second)
+
+	// 파일 및 폴더 삭제
+	fmt.Println("- 설치 파일 및 폴더 삭제 중...")
+	if err := os.RemoveAll(InstallDir); err != nil {
+		fmt.Printf("경고: 폴더 삭제 실패 (수동 삭제 필요) - %v\n", err)
+	} else {
+		fmt.Println("폴더 삭제 완료.")
 	}
 
 	fmt.Println("\n✅ 에이전트가 성공적으로 제거되었습니다!")
