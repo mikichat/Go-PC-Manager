@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
 	"flag"
-	"image/png"
 	"log"
 	"net"
 	"net/url"
@@ -16,7 +13,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/kardianos/service"
-	"github.com/kbinani/screenshot"
 
 	"gopc-agent/config"
 )
@@ -246,57 +242,6 @@ func executeCommand(conn *websocket.Conn, command string) {
 			Result: result,
 		}
 		conn.WriteJSON(msg)
-		return
-	}
-
-	// 스크린샷 명령 확인
-	if command == "capture_screen" {
-		log.Println("Executing screenshot capture...")
-
-		// 화면 캡처
-		n := screenshot.NumActiveDisplays()
-		if n <= 0 {
-			log.Println("No active displays found")
-			return
-		}
-
-		// 주 모니터(0번) 캡처
-		bounds := screenshot.GetDisplayBounds(0)
-		img, err := screenshot.CaptureRect(bounds)
-		if err != nil {
-			log.Printf("Screenshot failed: %v", err)
-			return
-		}
-
-		// 이미지를 PNG로 인코딩하여 버퍼에 저장
-		var buf bytes.Buffer
-		err = png.Encode(&buf, img)
-		if err != nil {
-			log.Printf("PNG encoding failed: %v", err)
-			return
-		}
-
-		// Base64 인코딩
-		encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
-
-		// 결과 전송
-		result := map[string]interface{}{
-			"command":    command,
-			"image_data": encoded,
-			"timestamp":  time.Now(),
-		}
-
-		msg := Message{
-			Type:   "command_result", // 기존 타입 재사용 또는 screenshot_result 사용
-			Result: result,
-		}
-
-		// 메시지 타입이 command_result이면 서버가 자동으로 중계함
-		// 하지만 대시보드에서 구분을 위해 result 내부에 image_data가 있으면 스크린샷으로 처리하도록 할 수 있음
-		// 또는 별도 타입을 사용할 수도 있음. 여기서는 command_result 사용하고 payload에 image_data 포함
-
-		conn.WriteJSON(msg)
-		log.Println("Screenshot sent successfully")
 		return
 	}
 

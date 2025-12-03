@@ -5,21 +5,7 @@ const commandInput = document.getElementById('command');
 const resultsContainer = document.getElementById('results');
 const resultsEmpty = document.getElementById('results-empty');
 
-// 모달 요소
-const modal = document.getElementById('screenshot-modal');
-const modalImg = document.getElementById('screenshot-image');
-const modalTitle = document.getElementById('screenshot-title');
-const closeModal = document.querySelector('.close-modal');
 
-// 모달 닫기 이벤트
-closeModal.onclick = function() {
-    modal.style.display = "none";
-}
-window.onclick = function(event) {
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
 
 // 에이전트 데이터 저장
 let agents = new Map();
@@ -140,7 +126,6 @@ function createAgentCard(agent) {
         <div class="agent-header">
             <div class="agent-id">
                 ${agent.info ? agent.info.hostname : agent.id}
-                ${agent.connected ? `<button class="screenshot-btn" onclick="requestScreenshot('${agent.id}', event)">스크린샷</button>` : ''}
             </div>
             <span class="agent-status ${statusClass}">${statusText}</span>
         </div>
@@ -174,7 +159,7 @@ function createAgentCard(agent) {
             document.querySelectorAll('.agent-card').forEach(c => {
                 c.classList.remove('selected');
             });
-            
+
             if (selectedAgentId === agent.id) {
                 selectedAgentId = null;
             } else {
@@ -192,7 +177,7 @@ function formatUptime(seconds) {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
+
     if (days > 0) {
         return `${days}일 ${hours}시간`;
     } else if (hours > 0) {
@@ -211,7 +196,7 @@ function sendCommand() {
     }
 
     const target = document.querySelector('input[name="target"]:checked').value;
-    
+
     const msg = {
         type: 'command',
         command: command
@@ -228,19 +213,7 @@ function sendCommand() {
     commandInput.value = '';
 }
 
-// 스크린샷 요청
-function requestScreenshot(agentId, event) {
-    event.stopPropagation(); // 카드 선택 방지
-    
-    const msg = {
-        type: 'command',
-        command: 'capture_screen',
-        agent_id: agentId
-    };
-    
-    socket.send(JSON.stringify(msg));
-    console.log(`스크린샷 요청: ${agentId}`);
-}
+
 
 // Enter 키로 명령 전송
 commandInput.addEventListener('keypress', (e) => {
@@ -251,16 +224,6 @@ commandInput.addEventListener('keypress', (e) => {
 
 // 명령 실행 결과 처리
 function handleCommandResult(msg) {
-    // 스크린샷 결과인 경우 모달에 표시
-    if (msg.result.image_data) {
-        const agentName = agents.get(msg.agent_id)?.info?.hostname || msg.agent_id;
-        const timestamp = new Date(msg.result.timestamp).toLocaleString('ko-KR');
-        
-        modalTitle.textContent = `${agentName} - 스크린샷 (${timestamp})`;
-        modalImg.src = `data:image/png;base64,${msg.result.image_data}`;
-        modal.style.display = "block";
-        return; // 결과 목록에는 추가하지 않음 (선택 사항)
-    }
 
     if (resultsEmpty) {
         resultsEmpty.style.display = 'none';
