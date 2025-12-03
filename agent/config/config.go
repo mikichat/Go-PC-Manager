@@ -15,6 +15,7 @@ type Config struct {
 	StatusInterval       int    `yaml:"status_interval"`        // 상태 수집 주기 (초)
 	UpdateCheckInterval  int    `yaml:"update_check_interval"`  // 업데이트 확인 주기 (초)
 	LogFile              string `yaml:"log_file"`               // 로그 파일 경로
+	AuthToken            string `yaml:"auth_token"`             // 인증 토큰 (보안)
 }
 
 // DefaultConfig 기본 설정값 반환

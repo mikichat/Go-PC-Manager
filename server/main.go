@@ -266,13 +266,24 @@ func handleCommand(msg map[string]interface{}) {
 	command, _ := msg["command"].(string)
 	targetAgentID, _ := msg["agent_id"].(string)
 
+	// 설정 로드 (토큰 가져오기 위해)
+	cfg := config.Load()
+
 	agentsMutex.Lock()
 	defer agentsMutex.Unlock()
+
+	// 명령 메시지 생성 (JSON)
+	cmdMsg := map[string]string{
+		"token":   cfg.AuthToken,
+		"command": command,
+	}
+	cmdBytes, _ := json.Marshal(cmdMsg)
 
 	for _, agent := range agents {
 		// 특정 에이전트에게만 전송하거나 전체 전송
 		if targetAgentID == "" || agent.ID == targetAgentID {
-			err := agent.Conn.WriteMessage(websocket.TextMessage, []byte(command))
+			// JSON 형태로 전송
+			err := agent.Conn.WriteMessage(websocket.TextMessage, cmdBytes)
 			if err != nil {
 				log.Println("write to agent error:", err)
 			}

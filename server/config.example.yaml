@@ -12,3 +12,6 @@ updates_dir: "updates"
 
 # 현재 에이전트 버전
 agent_version: "1.0.1"
+
+# 인증 토큰 (보안) - 에이전트와 동일하게 설정하세요
+auth_token: "your_secret_token_here"

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
 	"net"
@@ -153,8 +154,31 @@ func (p *program) run() {
 		}
 		log.Printf("recv: %s", message)
 
-		// 명령 실행
-		go executeCommand(conn, string(message))
+		// 명령 메시지 파싱
+		var cmdMsg struct {
+			Token   string `json:"token"`
+			Command string `json:"command"`
+		}
+
+		// JSON 파싱 시도
+		if err := json.Unmarshal(message, &cmdMsg); err == nil && cmdMsg.Command != "" {
+			// 토큰 검증
+			if cfg.AuthToken != "" && cmdMsg.Token != cfg.AuthToken {
+				log.Printf("Security alert: Unauthorized command attempt (Invalid Token)")
+				continue
+			}
+			// 명령 실행
+			go executeCommand(conn, cmdMsg.Command)
+		} else {
+			// JSON이 아니거나 형식이 맞지 않는 경우 (레거시 호환성 또는 공격 시도)
+			if cfg.AuthToken != "" {
+				// 토큰이 설정되어 있는데 JSON 형식이 아니면 차단
+				log.Printf("Security alert: Unauthorized command attempt (Missing Token)")
+				continue
+			}
+			// 토큰이 설정되지 않은 경우 기존 방식대로 문자열 그대로 실행 (하위 호환성)
+			go executeCommand(conn, string(message))
+		}
 	}
 }
 

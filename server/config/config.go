@@ -14,6 +14,7 @@ type Config struct {
 	StaticDir    string `yaml:"static_dir"`    // 정적 파일 디렉토리
 	UpdatesDir   string `yaml:"updates_dir"`   // 업데이트 파일 디렉토리
 	AgentVersion string `yaml:"agent_version"` // 현재 에이전트 버전
+	AuthToken    string `yaml:"auth_token"`    // 인증 토큰 (보안)
 }
 
 // DefaultConfig 기본 설정값 반환

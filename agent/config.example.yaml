@@ -12,3 +12,6 @@ update_check_interval: 60
 
 # 로그 파일 경로
 log_file: "agent.log"
+
+# 인증 토큰 (보안) - 서버와 동일하게 설정하세요
+auth_token: "your_secret_token_here"
