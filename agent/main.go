@@ -57,23 +57,26 @@ func (p *program) Stop(s service.Service) error {
 }
 
 func main() {
+	svcFlag := flag.String("service", "", "Control the system service.")
+	flag.Parse()
+
 	// 설정 로드
 	cfg := config.Load()
 
-	// 로그 파일 설정
-	exePath, err := os.Executable()
-	if err == nil {
-		logDir := filepath.Dir(exePath)
-		logFile := filepath.Join(logDir, cfg.LogFile)
-		f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// 서비스 제어 명령이 아닐 때만 로그 파일 설정
+	if len(*svcFlag) == 0 {
+		// 로그 파일 설정
+		exePath, err := os.Executable()
 		if err == nil {
-			defer f.Close()
-			log.SetOutput(f)
+			logDir := filepath.Dir(exePath)
+			logFile := filepath.Join(logDir, cfg.LogFile)
+			f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			if err == nil {
+				defer f.Close()
+				log.SetOutput(f)
+			}
 		}
 	}
-
-	svcFlag := flag.String("service", "", "Control the system service.")
-	flag.Parse()
 
 	svcConfig := &service.Config{
 		Name:        "GoPCAgent",
