@@ -68,6 +68,12 @@ func main() {
 func installService() {
 	fmt.Println("\n[설치 진행 중...]")
 
+	// 기존 서비스 중지 및 제거 시도 (재설치 경우 대비)
+	fmt.Println("- 기존 서비스 확인 및 정리 중...")
+	exec.Command("sc", "stop", "GoPCAgent").Run()
+	exec.Command("sc", "delete", "GoPCAgent").Run()
+	time.Sleep(1 * time.Second) // 서비스 제거 대기
+
 	// 설치 디렉토리 생성
 	fmt.Printf("- 설치 폴더 생성 중 (%s)...\n", InstallDir)
 	if err := os.MkdirAll(InstallDir, 0755); err != nil {
@@ -79,8 +85,11 @@ func installService() {
 	// agent.exe 파일 추출
 	targetPath := filepath.Join(InstallDir, AgentFile)
 	fmt.Println("- 파일 추출 중...")
+
+	// 파일이 사용 중일 수 있으므로 잠시 대기 후 재시도 로직 추가 가능하지만,
+	// 일단 서비스가 중지되었으므로 덮어쓰기 시도
 	if err := os.WriteFile(targetPath, agentExe, 0755); err != nil {
-		fmt.Printf("실패: 파일 쓰기 오류 - %v\n", err)
+		fmt.Printf("실패: 파일 쓰기 오류 (서비스가 실행 중일 수 있음) - %v\n", err)
 		pause()
 		return
 	}
