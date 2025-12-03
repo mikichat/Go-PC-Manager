@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const AgentVersion = "1.0.0"
+const AgentVersion = "1.0.1"
 
 type VersionResponse struct {
 	Version string `json:"version"`
