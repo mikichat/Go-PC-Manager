@@ -189,10 +189,15 @@ function formatUptime(seconds) {
 
 // 명령 전송
 function sendCommand() {
-    const command = commandInput.value.trim();
+    let command = commandInput.value.trim();
     if (!command) {
         alert('명령어를 입력하세요.');
         return;
+    }
+
+    const guiMode = document.getElementById('gui-mode').checked;
+    if (guiMode) {
+        command = 'gui:' + command;
     }
 
     const target = document.querySelector('input[name="target"]:checked').value;
