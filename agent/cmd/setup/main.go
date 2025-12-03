@@ -18,7 +18,7 @@ import (
 var agentExe []byte
 
 const (
-	InstallDir = "C:\\GoPCAgent"
+	InstallDir = "C:\\Program Files\\GoPCManager"
 	AgentFile  = "agent.exe"
 	ConfigFile = "config.yaml"
 )
