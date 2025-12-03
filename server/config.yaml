@@ -14,4 +14,4 @@ updates_dir: "updates"
 agent_version: "1.0.1"
 
 # 인증 토큰 (보안)
-auth_token: "test_secret_token_123"
+auth_token: "your_secret_token_here"

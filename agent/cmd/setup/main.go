@@ -102,6 +102,7 @@ func installService() {
 status_interval: 5
 update_check_interval: 60
 log_file: "agent.log"
+auth_token: "your_secret_token_here"
 `
 		if err := os.WriteFile(configPath, []byte(defaultConfig), 0644); err != nil {
 			fmt.Printf("경고: 설정 파일 생성 실패 - %v\n", err)
